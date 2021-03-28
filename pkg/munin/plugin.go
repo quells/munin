@@ -5,21 +5,43 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"regexp"
 	"strconv"
 
 	"github.com/quells/munin/internal/env"
 )
 
+// Env variables passed in to the plugin.
 type Env map[string]string
+
+// Values produced by the plugin.
+// Keyed by the field name of the corresponding Series.
 type Values map[string]float64
+
+// Precision (number of digits after the decimal place) for values produced by the plugin.
+// Keyed by the field name of the corresponding Series.
 type Precision map[string]int
 
+// A Plugin for Munin which fits into this framework.
+// The main function for a plugin should just have to pass in a value to the Run function
+// and the rest will be taken care of.
 type Plugin interface {
+	// Help returns configuration and usage information for the plugin.
+	// This does not conform to the Munin spec, but is useful since Go binaries
+	// are not as easy to inspect as plaintext scripts.
 	Help() string
+
+	// Config returns graph configuration data, possibly informed by the environment
+	// or configuration values passed in via the environment.
 	Config(env Env) (conf Config, err error)
-	Run(env Env) (values Values, precision Precision, err error)
+
+	// Fetch data values to be displayed on the graph, possibly informed by the environment
+	// or configuration values passed in via the environment.
+	Fetch(env Env) (values Values, precision Precision, err error)
 }
 
+// Run the Plugin as a good Munin citizen.
+// Supports the "dirty config" capability for one-shot configuration and value emission.
 func Run(p Plugin) {
 	if helpRequested() {
 		help := p.Help()
@@ -41,13 +63,6 @@ func Run(p Plugin) {
 	os.Exit(0)
 }
 
-func formatValue(value float64, precision int) string {
-	if precision == 0 {
-		return strconv.Itoa(int(math.Round(value)))
-	}
-	return strconv.FormatFloat(value, 'f', precision, 64)
-}
-
 func helpRequested() bool {
 	if len(os.Args) == 2 {
 		switch os.Args[1] {
@@ -63,6 +78,23 @@ func helpRequested() bool {
 	return false
 }
 
+func formatValue(value float64, precision int) string {
+	if precision == 0 {
+		return strconv.Itoa(int(math.Round(value)))
+	}
+	return strconv.FormatFloat(value, 'f', precision, 64)
+}
+
+var fieldName = regexp.MustCompile(`(^[^A-Za-z_]|[^A-Za-z0-9_])`)
+
+func cleanFieldName(text string) string {
+	if text == "root" {
+		return "_root"
+	}
+
+	return fieldName.ReplaceAllString(text, "_")
+}
+
 func emitConfig(p Plugin, e Env) {
 	conf, err := p.Config(e)
 	if err != nil {
@@ -74,7 +106,7 @@ func emitConfig(p Plugin, e Env) {
 }
 
 func emitValues(p Plugin, e Env) {
-	values, precision, err := p.Run(e)
+	values, precision, err := p.Fetch(e)
 	if err != nil {
 		fmt.Fprint(os.Stderr, err.Error())
 		os.Exit(1)
@@ -83,7 +115,7 @@ func emitValues(p Plugin, e Env) {
 	buf := new(bytes.Buffer)
 	for k, v := range values {
 		p := precision[k]
-		buf.WriteString(k)
+		buf.WriteString(cleanFieldName(k))
 		buf.WriteString(".value ")
 		buf.WriteString(formatValue(v, p))
 		buf.WriteByte('\n')

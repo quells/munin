@@ -21,7 +21,7 @@ func (p *piHole) Help() string {
 
 func (p *piHole) Config(env munin.Env) (conf munin.Config, err error) {
 	conf.Title = "PiHole stats - " + env["host"]
-	conf.Category = "network"
+	conf.Category = "dns"
 	conf.Info = info
 	conf.Series = make(map[string]munin.Series)
 
@@ -42,7 +42,7 @@ func (p *piHole) Config(env munin.Env) (conf munin.Config, err error) {
 	return
 }
 
-func (p *piHole) Run(env munin.Env) (values munin.Values, precision munin.Precision, err error) {
+func (p *piHole) Fetch(env munin.Env) (values munin.Values, precision munin.Precision, err error) {
 	client := pihole5.NewClient(env["host"], skipSet(env))
 	values, precision, err = client.Load()
 	return
