@@ -50,3 +50,14 @@ func (p *myPlugin) Fetch(env munin.Env) (values munin.Values, precision munin.Pr
 	return
 }
 ```
+
+```sh
+$ go run ./cmd/example config
+graph_title My Data
+graph_info This is just an example.
+example.label data
+example.type GAUGE
+
+$ go run ./cmd/example
+example.value 0.605
+```
