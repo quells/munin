@@ -8,7 +8,7 @@ A collection of helpers for writing [Munin](http://munin-monitoring.org/) plugin
 
 ## Basic Usage
 
-[Random number](https://github.com/quells/munin/tree/main/cmd/pihole/example/example.go)
+[Random number](https://github.com/quells/munin/blob/main/cmd/example/example.go)
 
 ```go
 package main
