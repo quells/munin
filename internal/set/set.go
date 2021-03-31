@@ -20,6 +20,8 @@
 
 package set
 
+import "sort"
+
 type Strings map[string]struct{}
 
 func OfStrings(ss []string) Strings {
@@ -28,4 +30,15 @@ func OfStrings(ss []string) Strings {
 		set[s] = struct{}{}
 	}
 	return set
+}
+
+func (strs Strings) Sorted() []string {
+	ss := make([]string, len(strs))
+	var i int
+	for s := range strs {
+		ss[i] = s
+		i++
+	}
+	sort.Strings(ss)
+	return ss
 }

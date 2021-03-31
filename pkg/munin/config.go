@@ -24,6 +24,7 @@ import (
 	"bytes"
 	"fmt"
 	"math"
+	"sort"
 )
 
 type GraphType int
@@ -156,7 +157,16 @@ func (c Config) String() string {
 		fmt.Fprintf(buf, "graph_info %s\n", c.Info)
 	}
 
-	for key, series := range c.Series {
+	keys := make([]string, len(c.Series))
+	var i int
+	for key := range c.Series {
+		keys[i] = key
+		i++
+	}
+	sort.Strings(keys)
+
+	for _, key := range keys {
+		series := c.Series[key]
 		key = cleanFieldName(key)
 		if series.Label != "" {
 			fmt.Fprintf(buf, "%s.label %s\n", key, series.Label)

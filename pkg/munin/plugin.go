@@ -26,6 +26,7 @@ import (
 	"math"
 	"os"
 	"regexp"
+	"sort"
 	"strconv"
 
 	"github.com/quells/munin/internal/env"
@@ -132,8 +133,17 @@ func emitValues(p Plugin, e Env) {
 		os.Exit(1)
 	}
 
+	keys := make([]string, len(values))
+	var i int
+	for k := range values {
+		keys[i] = k
+		i++
+	}
+	sort.Strings(keys)
+
 	buf := new(bytes.Buffer)
-	for k, v := range values {
+	for _, k := range keys {
+		v := values[k]
 		p := precision[k]
 		buf.WriteString(cleanFieldName(k))
 		buf.WriteString(".value ")
